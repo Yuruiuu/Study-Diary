@@ -1,0 +1,198 @@
+# 函数模板
+==除了类型不同外,函数的运算逻辑都一样,这样的函数我们就可以利用函数模板技术来生成对应的函数==
+## 用法
+```c++
+template <typename type1> type1 ave(type1 a, type1 b, type1 c)
+{
+	return (a + b + c) / 2;
+}
+
+int main()
+{
+	cout << ave(12.0f, 23.0f, 98.0f) << endl;//66.5
+	cout << ave(12, 23, 98) << endl;//66
+    cout << ave((char)12,(char)23,(char)98) << endl;//B
+    cout << ave<int>(12.0f, 23., 98.0f) << endl;//66, <int>为函数模板指定类型
+}
+```
+
+```c++
+template <typename type1> type1 mul(type1 a,type1 b,type1 c)
+{
+    type1 x=a*b;
+    type1 p[10];//数组
+    return x*c;
+}
+```
+## 函数模板的例外情况
+### 问题背景：函数模板传入指针
+```c++
+template <typename type1> type1 cmp(type1 a, type1 b)
+{
+	return a > b ? a : b;//当a,b为指针是，比较的是指针的地址大小
+}
+
+int main()
+{
+	int a{ 200 }, b{ 1200 };
+	int c{};
+	c = *cmp(&a, &b);
+	cout << c;//200
+}
+```
+### 解决方法一：函数模板的例外情况
+```c++
+template <typename type1> type1 cmp(type1 a, type1 b)
+{
+	return a > b ? a : b;
+}
+
+template<> int* cmp(int* a, int* b) //例外情况
+{
+	return *a > *b ? a : b;
+}
+
+int main()
+{
+	int a{ 200 }, b{ 100 };
+	int c{};
+	c = *cmp(&a, &b);
+	cout << c;//1200
+}
+```
+### 解决方法二：函数模板+函数重载
+==原理：函数重载优先于函数模板==
+```c++
+template <typename type1> type1 cmp(type1 a, type1 b)
+{
+	return a > b ? a : b;
+}
+
+int* cmp(int* a, int* b)
+{
+	return *a > *b ? a : b;
+}
+
+int main()
+{
+	int a{ 200 }, b{ 1200 };
+	int c{};
+	c = *cmp(&a, &b);
+	cout << c;
+}
+```
+## 函数模板返回类型
+```c++
+template<typename TypeReturn,typename T1,typename T2>
+//函数返回值类型放在第一个，使用的时候可以只指定一个类型
+TypeReturn ave(T1 a,T2 b)
+{
+    return (a+b)/2;
+}
+
+int main()
+{
+    ave<double>(10, 23.0f);//只指定了第一个类型，后面的可以根据参数推断
+    //<doube>不写的化默认int类型
+}
+```
+### 利用decltype和auto推断返回类型
+```c++
+template<typename T1,typename T2>
+decltype(auto) bigger(T1 a,T2 b)
+{
+    return a>b?a:b;
+}
+```
+## 函数模板参数
+### 函数模板参数的默认值
+```c++
+template <typename TypeReturn,typename type1,typename type2>
+TypeReturn ave(type1 a,type2 b)
+{}
+ave<double>(100,200);//不写double默认int
+
+————————————————————————————————————————————————————————————————————————————————————————
+
+//TypeReturn=double
+template <typename TypeReturn=double,typename type1,typename type2>
+TypeReturn ave(type1 a,type2 b)
+{}
+ave(100,200);//double
+
+————————————————————————————————————————————————————————————————————————————————————————
+
+//TypeReturn=type1;
+template <typename type1,typename type2, typename TypeReturn=type1>
+TypeReturn ave(type1 a,type2 b)
+{}
+ave(100,200.of);//type1
+```
+### 非类型的函数模板参数
+```c++
+//函数模板可以有非类型的模板参数
+template <int max,int min,typename type1>
+bool ChangeHp(type1& hp,type1 damage)
+{
+    hp-=damage;
+	if(hp>max)hp=max;
+    return hp<min;
+    //max不是变量，max=2500报错
+}
+
+int main()
+{
+	int hp=2500;
+    ChangeHp<2000,1000>(hp,100);
+}
+
+————————————————————————————————————————————————————————————————————————————————————————
+
+//指定默认值
+template <int max=2000,int min=1000,typename type1>
+bool ChangeHp(type1& hp,type1 damage)
+{
+    hp-=damage;
+	if(hp>max)hp=max;
+    return hp<min;
+}
+
+int main()
+{
+	int hp=2500;
+    ChangeHp(hp,100);
+}
+
+————————————————————————————————————————————————————————————————————————————————————————
+
+template <typename type1，type1 max=2500,type1 min=1000>
+bool ChangeHp(type1& hp,type1 damage)
+{
+    hp-=damage;
+	if(hp>max)hp=max;
+    return hp<min;
+}
+
+int main()
+{
+	int hp=2500;
+    ChangeHp<2000,1000>(hp,100);
+}
+
+————————————————————————————————————————————————————————————————————————————————————————
+
+template<typename T, short count>
+T ave(T(&ary)[count])
+{
+    T all{};
+    for(auto x:ary)
+        all+=x;
+    return all/count;
+}
+
+int main()
+{
+    int a[5]{1,2,3,4,5};
+    cout<<ave(a);//3,  能自动推断出count的值
+}
+```
